@@ -1,5 +1,5 @@
 import { LitElement, html, css } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 
 @customElement("dict-definition-type")
 class DictDefinitionType extends LitElement {
@@ -22,18 +22,36 @@ class DictDefinitionType extends LitElement {
 @customElement("dict-definition")
 class DictDefinition extends LitElement {
   static styles = css`
-    .definition {
+    .definition-box {
       border-radius: 0.3em;
       padding: 0 1em;
       transition: background-color 0.1s ease-in;
       min-width: 15em;
       display: flex;
       align-items: center;
-      gap: 0.5em;
+      justify-content: space-between;
     }
 
-    .definition:hover {
+    .definition-clipboard {
+      display: none;
+
+      :hover {
+        color: var(--color-sky);
+      }
+    }
+
+    .definition-box:hover {
       background-color: var(--color-surface);
+
+      .definition-clipboard {
+        display: block;
+      }
+    }
+
+    .definition {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
     }
 
     .types {
@@ -45,13 +63,26 @@ class DictDefinition extends LitElement {
   @property({ type: String })
   definition = "";
 
+  // todo improve copy to clipboard functionality
+  copyToClipboard() {    
+    navigator.clipboard.writeText(this.definition)
+  }
+
   render() {
-    return html`<div class="definition">
-      <div class="types">
-        <slot />
+    return html`
+      <div class="definition-box">
+        <div class="definition">
+          <div class="types">
+            <slot />
+          </div>
+          <p>${this.definition}</p>
+        </div>
+
+        <div class="definition-clipboard" @click="${this.copyToClipboard}">
+          <dict-clipboard-icon></dict-clipboard-icon>
+        </div>
       </div>
-      <p>${this.definition}</p>
-    </div> `;
+    `;
   }
 }
 
@@ -60,7 +91,7 @@ class DictEntry extends LitElement {
   static styles = css`
     h2 {
       font-size: 1.4em;
-      margin: 1em;
+      margin: 0.2em;
       margin-left: 0.5em;
       color: var(--color-sky);
     }
@@ -88,12 +119,16 @@ export class InjectedComponent extends LitElement {
         left: 0;
         padding: 0.5em;
         box-shadow: 1px 1px 5px var(--color-sky);
-        border-radius: 4%;
+        border-radius: 0.5em;
         background-color: var(--color-base);
         z-index: 999;
-    }
+        overflow: auto;
+        max-height: 60vh;
     }
   `;
+
+  @state()
+  private definitions: string[] = [];
 
   hide(b: boolean) {
     this.style.display = b ? "none" : "block";
@@ -115,10 +150,17 @@ export class InjectedComponent extends LitElement {
     return { height: bound?.height, width: bound?.width };
   }
 
+  // todo: retrieve information about the definitions
+  setCurrentSelection(text: string) {
+    this.definitions = text.split(' ')
+  }
+
   render() {
-    return html`
-      <div class="component">
-        <dict-entry name="Hello">
+    let definitions = [];
+
+    for (const definition of this.definitions) {
+      definitions.push(html`
+        <dict-entry name="${definition}">
           <dict-definition definition="Greetings">
             <dict-definition-type>noun</dict-definition-type>
             <dict-definition-type>verb</dict-definition-type>
@@ -130,7 +172,11 @@ export class InjectedComponent extends LitElement {
             <dict-definition-type>noun</dict-definition-type>
           </dict-definition>
         </dict-entry>
-      </div>
-    `;
+      `);
+    }
+
+    return html`<div class="component">
+      ${definitions}
+    </div>`;
   }
 }

@@ -1,4 +1,5 @@
 import { InjectedComponent } from "./popup";
+import "./icons.ts";
 
 let injectedComp = new InjectedComponent();
 injectedComp.hide(true);
@@ -38,6 +39,7 @@ document.addEventListener("mouseup", (e) => {
   let selectionText = selection?.toString();
   if (selectionText.length !== 0) {
     injectedComp.hide(false);
+    injectedComp.setCurrentSelection(selectionText);
     computePositionFromSelection(selection);
     return;
   }
